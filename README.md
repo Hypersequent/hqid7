@@ -49,6 +49,9 @@ inserted after the first 9 characters.
 
 String representation is sortable lexicographically, which a useful property when using as keys in databases.
 
+> [!WARNING]
+> Correct sort order (chronological by timestamp) is only guaranteed with **"C" collation** (case-sensitive ASCII). Using locale-specific collations like `en_US.UTF-8` or case-insensitive collations may result in incorrect sort order. In PostgreSQL, use `COLLATE "C"` for columns storing hqid7 values.
+
 ## Library Usage
 
 ```go
