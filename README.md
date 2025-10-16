@@ -1,8 +1,10 @@
-# Hypersequent's UUID7
+# hqid7
 
 This is a Go library for generating UUIDv7 based on [RFC 9562](https://www.rfc-editor.org/rfc/rfc9562.html) — the new UUID specification published in May 2024.
 
-This library also implements a custom string encoding for UUIDv7, which is lexicographically sortable. This string 
+> **Note:** This package was previously known as **Hypersequent's UUID7**, but was renamed to **hqid7** to avoid confusion with the official UUID7 standard released in RFC 9562.
+
+This library also implements a custom string encoding for UUIDv7, which is lexicographically sortable. This string
 encoding is not defined in RFC 9562 and is based on the Base58 encoding used in Bitcoin.
 
 To make string representation visually more distinguishable from other UUIDs, there is a dash `_` character 
@@ -50,18 +52,45 @@ inserted after the first 9 characters.
 
 String representation is sortable lexicographically, which a useful property when using as keys in databases.
 
-## Usage
+## Library Usage
 
 ```go
 package main
 
 import "fmt"
-import "github.com/hypersequent/uuid7"
+import "github.com/hypersequent/hqid7"
 
 func main() {
-    uuid := uuid7.NewString() // returns a 22 character long string like "1C3Rttz29_K2U2o4AdhPF5b" 
+    uuid := hqid7.NewString() // returns a 23 character long string like "1C3Rttz29_K2U2o4AdhPF5b"
     fmt.Println(uuid)
 }
+```
+
+## CLI Tool
+
+The `hqid7` command-line tool can generate and parse hqid7 identifiers.
+
+### Installation
+
+```bash
+go install github.com/hypersequent/hqid7/cmd/hqid7@latest
+```
+
+### Usage
+
+**Generate a new hqid7:**
+```bash
+hqid7 new
+```
+
+**Parse an existing hqid7:**
+```bash
+hqid7 parse 1C3XR6Gzv_es6ViopPLabMW
+# hqid7: 1C3XR6Gzv_es6ViopPLabMW
+#
+# Timestamp (UTC):   2023-09-22 11:48:35.074 UTC
+# Timestamp (Local): 2023-09-22 15:48:35.074 +04
+# ...
 ```
 
 ## Dependencies

@@ -1,4 +1,4 @@
-package uuid7
+package hqid7
 
 import (
 	"crypto/rand"

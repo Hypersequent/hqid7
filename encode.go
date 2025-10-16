@@ -1,4 +1,4 @@
-package uuid7
+package hqid7
 
 import (
 	"errors"
@@ -24,10 +24,10 @@ func EncodeBase58(u UUID) string {
 
 func DecodeBase58(s string) (UUID, error) {
 	if len(s) != 23 {
-		return UUID{}, errors.New("uuid7 base58: invalid length")
+		return UUID{}, errors.New("hqid7 base58: invalid length")
 	}
 	if s[9] != '_' {
-		return UUID{}, errors.New("uuid7 base58: invalid separator")
+		return UUID{}, errors.New("hqid7 base58: invalid separator")
 	}
 	s = s[0:9] + s[10:]
 	d, err := base58.Decode(s)

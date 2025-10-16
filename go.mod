@@ -1,4 +1,4 @@
-module github.com/hypersequent/uuid7
+module github.com/hypersequent/hqid7
 
 go 1.21.0
 
