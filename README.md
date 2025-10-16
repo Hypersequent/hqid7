@@ -1,14 +1,11 @@
 # hqid7
 
-This is a Go library for generating UUIDv7 based on [RFC 9562](https://www.rfc-editor.org/rfc/rfc9562.html) — the new UUID specification published in May 2024.
+A Go library for generating lexicographically sortable identifiers with custom Base58 string encoding. Uses the UUIDv7 binary format from [RFC 9562](https://www.rfc-editor.org/rfc/rfc9562.html) but provides a more compact and URL-friendly string representation than the standard hex format.
 
-> **Note:** This package was previously known as **Hypersequent's UUID7**, but was renamed to **hqid7** to avoid confusion with the official UUID7 standard released in RFC 9562.
+> [!NOTE]
+> This package was previously known as **Hypersequent's UUID7**, but was renamed to **hqid7** to avoid confusion with the official UUID7 standard released in RFC 9562.
 
-This library also implements a custom string encoding for UUIDv7, which is lexicographically sortable. This string
-encoding is not defined in RFC 9562 and is based on the Base58 encoding used in Bitcoin.
-
-To make string representation visually more distinguishable from other UUIDs, there is a dash `_` character 
-inserted after the first 9 characters.
+The string encoding uses Bitcoin's Base58 alphabet and is always 23 characters long with an underscore separator after the 9th character for visual clarity.
 
 Example: 
 ```txt
