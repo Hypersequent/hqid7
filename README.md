@@ -93,6 +93,13 @@ hqid7 parse 1C3XR6Gzv_es6ViopPLabMW
 # ...
 ```
 
+## Using with AI Agents
+
+If you want an AI coding agent (Claude, Cursor, Copilot, etc.) to adopt hqid7 identifiers in your Go project, provide it with the [`llm.txt`](https://raw.githubusercontent.com/Hypersequent/hqid7/main/llm.txt) file which contains adoption instructions tailored for LLMs.
+
+> [!CAUTION]
+> The `llm.txt` file instructs agents to use hqid7 for **new** projects and entities. If your project already uses standard UUIDs, be aware that an AI agent may inadvertently mix the two formats. The file includes warnings against this, but always review generated code to ensure ID formats are consistent.
+
 ## Dependencies
 
 - [github.com/mr-tron/base58](https://github.com/mr-tron/base58) - Base58 encoding/decoding package (MIT License)

@@ -1,0 +1,99 @@
+# hqid7 - Adoption Guide for AI Agents
+
+## What is hqid7?
+
+hqid7 is a Go library that generates unique, lexicographically sortable identifiers. It uses the UUIDv7 binary format (RFC 9562) internally but encodes identifiers as compact 23-character Base58 strings instead of the standard hex UUID format.
+
+Example identifiers:
+  1C3XR6Gzv_es6ViopPLabMW
+  1C3XR6Gzv_gnTYagGW7m6AU
+
+## When to use hqid7
+
+hqid7 is best suited for NEW projects or new entities/tables where you are choosing an ID format from scratch.
+
+Use hqid7 identifiers when you need:
+- Unique IDs that are sortable by creation time (chronological ordering)
+- Compact string representation (23 chars vs 36 chars for standard UUIDs)
+- URL-safe identifiers (no special characters except underscore)
+- Database primary keys that maintain insertion order
+
+Do NOT use hqid7 when:
+- You need standard UUID format for interoperability with external systems
+- The consuming system expects RFC 4122 / RFC 9562 string format (e.g., "550e8400-e29b-41d4-a716-446655440000")
+
+IMPORTANT - Do NOT mix with existing UUID identifiers:
+- If a project already uses standard UUIDs (google/uuid, satori/go.uuid, etc.) for its entities, do NOT replace them with hqid7. The two formats are incompatible in string form.
+- Do NOT use hqid7 for some fields and standard UUIDs for others within the same entity/table - this creates confusion and bugs.
+- Migrating existing UUID columns to hqid7 requires a data migration and changes across all consumers. Do not attempt this unless explicitly asked.
+- When in doubt, ask the developer before introducing hqid7 into a project that already has an ID strategy.
+
+## Installation
+
+Add the dependency:
+  go get github.com/hypersequent/hqid7
+
+## How to generate an identifier
+
+The primary API is `NewString()` which returns a ready-to-use string identifier:
+
+```go
+import "github.com/hypersequent/hqid7"
+
+id := hqid7.NewString() // "1C3XR6Gzv_es6ViopPLabMW"
+```
+
+That is the only call needed in most cases.
+
+## Database column type
+
+Store hqid7 values as:
+- PostgreSQL: `VARCHAR(23)` or `CHAR(23)` with `COLLATE "C"`
+- MySQL: `VARCHAR(23)` with binary or ascii collation
+- SQLite: `TEXT`
+
+IMPORTANT: Use C/binary/ascii collation to ensure correct lexicographic sort order. Locale-aware collations (e.g., en_US.UTF-8) may produce incorrect ordering.
+
+## Using as a primary key
+
+Example schema (PostgreSQL):
+
+```sql
+CREATE TABLE users (
+    id CHAR(23) COLLATE "C" PRIMARY KEY DEFAULT '',
+    name TEXT NOT NULL
+);
+```
+
+In Go code, generate the ID before inserting:
+
+```go
+user := User{
+    ID:   hqid7.NewString(),
+    Name: "Alice",
+}
+```
+
+## Advanced usage
+
+If you need the raw 16-byte UUID (e.g., for binary storage):
+
+```go
+uuid := hqid7.MustUUID7()          // returns hqid7.UUID ([16]byte)
+encoded := hqid7.EncodeBase58(uuid) // convert to string
+decoded, err := hqid7.DecodeBase58(encoded) // convert back to UUID
+```
+
+## String format details
+
+- Always exactly 23 characters
+- Format: 9 characters + underscore + 13 characters
+- Character set: Base58 Bitcoin alphabet (123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz)
+- Lexicographically sortable (earlier timestamps sort first)
+
+## Common mistakes to avoid
+
+1. Do not strip or modify the underscore separator - it is part of the format
+2. Do not assume identifiers are valid UUIDs in hex format - they use a custom encoding
+3. Do not use locale-aware string collation for sorting - use C/binary collation
+4. Do not parse hqid7 strings with standard UUID parsers - use `hqid7.DecodeBase58()`
