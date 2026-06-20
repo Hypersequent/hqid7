@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/hypersequent/hqid7"
@@ -75,31 +76,46 @@ func parseUUID() {
 	randomBits := last64Bits & 0x3FFFFFFFFFFFFFFF
 
 	// Display information
-	_, _ = fmt.Fprintf(os.Stdout, parseOutputFormat,
-		idString,
-		timestamp.UTC().Format(timeFormat),
-		timestamp.Local().Format(timeFormat),
-		timestampMs,
-		version,
-		variant, variant,
-		subMsPrecision, subMsPrecision,
-		randomBits,
-	)
+	var storage [512]byte
+	buf := storage[:0]
+	buf = append(buf, "hqid7: "...)
+	buf = append(buf, idString...)
+	buf = append(buf, "\n\nTimestamp (UTC):   "...)
+	buf = timestamp.UTC().AppendFormat(buf, timeFormat)
+	buf = append(buf, "\nTimestamp (Local): "...)
+	buf = timestamp.Local().AppendFormat(buf, timeFormat)
+	buf = append(buf, "\nUnix milliseconds: "...)
+	buf = strconv.AppendUint(buf, timestampMs, 10)
+	buf = append(buf, "\n\nVersion:           "...)
+	buf = strconv.AppendUint(buf, version, 10)
+	buf = append(buf, "\nVariant:           "...)
+	buf = strconv.AppendUint(buf, variant, 10)
+	buf = append(buf, " (binary: "...)
+	buf = appendFixedBase(buf, variant, 2, "01")
+	buf = append(buf, ")\nSub-ms precision:  "...)
+	buf = strconv.AppendUint(buf, subMsPrecision, 10)
+	buf = append(buf, " (binary: "...)
+	buf = appendFixedBase(buf, subMsPrecision, 12, "01")
+	buf = append(buf, ")\nRandom bits (62):  0x"...)
+	buf = appendFixedBase(buf, randomBits, 15, "0123456789ABCDEF")
+	buf = append(buf, '\n')
+	_, _ = os.Stdout.Write(buf)
+}
+
+func appendFixedBase(buf []byte, v uint64, width int, alphabet string) []byte {
+	start := len(buf)
+	for i := 0; i < width; i++ {
+		buf = append(buf, 0)
+	}
+	base := uint64(len(alphabet))
+	for i := width - 1; i >= 0; i-- {
+		buf[start+i] = alphabet[v%base]
+		v /= base
+	}
+	return buf
 }
 
 const timeFormat = "2006-01-02 15:04:05.000 MST"
-
-const parseOutputFormat = `hqid7: %s
-
-Timestamp (UTC):   %s
-Timestamp (Local): %s
-Unix milliseconds: %d
-
-Version:           %d
-Variant:           %d (binary: %02b)
-Sub-ms precision:  %d (binary: %012b)
-Random bits (62):  0x%015X
-`
 
 const usageText = `Hypersequent hqid7 Tool
 
