@@ -76,17 +76,31 @@ func parseUUID() {
 	randomBits := last64Bits & 0x3FFFFFFFFFFFFFFF
 
 	// Display information
-	fmt.Printf("hqid7: %s\n", idString)
-	fmt.Println()
-	fmt.Printf("Timestamp (UTC):   %s\n", timestamp.UTC().Format("2006-01-02 15:04:05.000 MST"))
-	fmt.Printf("Timestamp (Local): %s\n", timestamp.Local().Format("2006-01-02 15:04:05.000 MST"))
-	fmt.Printf("Unix milliseconds: %d\n", timestampMs)
-	fmt.Println()
-	fmt.Printf("Version:           %d\n", version)
-	fmt.Printf("Variant:           %d (binary: %02b)\n", variant, variant)
-	fmt.Printf("Sub-ms precision:  %d (binary: %012b)\n", subMsPrecision, subMsPrecision)
-	fmt.Printf("Random bits (62):  0x%015X\n", randomBits)
+	_, _ = fmt.Fprintf(os.Stdout, parseOutputFormat,
+		idString,
+		timestamp.UTC().Format(timeFormat),
+		timestamp.Local().Format(timeFormat),
+		timestampMs,
+		version,
+		variant, variant,
+		subMsPrecision, subMsPrecision,
+		randomBits,
+	)
 }
+
+const timeFormat = "2006-01-02 15:04:05.000 MST"
+
+const parseOutputFormat = `hqid7: %s
+
+Timestamp (UTC):   %s
+Timestamp (Local): %s
+Unix milliseconds: %d
+
+Version:           %d
+Variant:           %d (binary: %02b)
+Sub-ms precision:  %d (binary: %012b)
+Random bits (62):  0x%015X
+`
 
 const usageText = `Hypersequent hqid7 Tool
 
