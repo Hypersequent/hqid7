@@ -75,10 +75,43 @@ func DecodeBase58(s string) (UUID, error) {
 	// mr-tron/base58 fast decoder. hqid7 keeps the low 128 bits after removing
 	// leading Base58 zeroes, so the UUID is the final four limbs.
 	var out [6]uint32
-	for i := 0; i < len(s); i++ {
-		if i == 9 {
-			continue
+	for i := 0; i < 9; i++ {
+		c := s[i]
+		if c > 127 {
+			return UUID{}, fmt.Errorf("High-bit set on invalid digit")
 		}
+		v := base58Decode[c]
+		if v == 0 {
+			return UUID{}, fmt.Errorf("Invalid base58 digit (%q)", rune(c))
+		}
+
+		carry := uint32(v - 1)
+		t := uint64(out[5])*58 + uint64(carry)
+		out[5] = uint32(t)
+		carry = uint32(t>>32) & 0x3f
+		t = uint64(out[4])*58 + uint64(carry)
+		out[4] = uint32(t)
+		carry = uint32(t>>32) & 0x3f
+		t = uint64(out[3])*58 + uint64(carry)
+		out[3] = uint32(t)
+		carry = uint32(t>>32) & 0x3f
+		t = uint64(out[2])*58 + uint64(carry)
+		out[2] = uint32(t)
+		carry = uint32(t>>32) & 0x3f
+		t = uint64(out[1])*58 + uint64(carry)
+		out[1] = uint32(t)
+		carry = uint32(t>>32) & 0x3f
+		t = uint64(out[0])*58 + uint64(carry)
+		out[0] = uint32(t)
+		carry = uint32(t>>32) & 0x3f
+		if carry > 0 {
+			return UUID{}, fmt.Errorf("Output number too big (carry to the next int32)")
+		}
+		if out[0]&0xffff0000 != 0 {
+			return UUID{}, fmt.Errorf("Output number too big (last int32 filled too far)")
+		}
+	}
+	for i := 10; i < 23; i++ {
 		c := s[i]
 		if c > 127 {
 			return UUID{}, fmt.Errorf("High-bit set on invalid digit")
