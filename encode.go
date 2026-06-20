@@ -89,11 +89,24 @@ func DecodeBase58(s string) (UUID, error) {
 		}
 
 		carry := uint32(v - 1)
-		for j := len(out) - 1; j >= 0; j-- {
-			t := uint64(out[j])*58 + uint64(carry)
-			carry = uint32(t>>32) & 0x3f
-			out[j] = uint32(t)
-		}
+		t := uint64(out[5])*58 + uint64(carry)
+		out[5] = uint32(t)
+		carry = uint32(t>>32) & 0x3f
+		t = uint64(out[4])*58 + uint64(carry)
+		out[4] = uint32(t)
+		carry = uint32(t>>32) & 0x3f
+		t = uint64(out[3])*58 + uint64(carry)
+		out[3] = uint32(t)
+		carry = uint32(t>>32) & 0x3f
+		t = uint64(out[2])*58 + uint64(carry)
+		out[2] = uint32(t)
+		carry = uint32(t>>32) & 0x3f
+		t = uint64(out[1])*58 + uint64(carry)
+		out[1] = uint32(t)
+		carry = uint32(t>>32) & 0x3f
+		t = uint64(out[0])*58 + uint64(carry)
+		out[0] = uint32(t)
+		carry = uint32(t>>32) & 0x3f
 		if carry > 0 {
 			return UUID{}, fmt.Errorf("Output number too big (carry to the next int32)")
 		}
