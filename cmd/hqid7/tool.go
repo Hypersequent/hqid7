@@ -41,8 +41,7 @@ func generateUUID() {
 
 	// Print only canonical hqid7 base58 encoded string
 	base58String := hqid7.EncodeBase58(uuid)
-	_, _ = os.Stdout.WriteString(base58String)
-	_, _ = os.Stdout.WriteString("\n")
+	fmt.Printf("%s\n", base58String)
 }
 
 func parseUUID() {
