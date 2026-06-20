@@ -2,8 +2,8 @@ package hqid7
 
 import (
 	"errors"
+
 	"github.com/mr-tron/base58"
-	"strings"
 )
 
 func NewString() string {
@@ -14,12 +14,41 @@ func encodeBase58Raw(u UUID) string {
 	return base58.Encode(u[:])
 }
 
+const base58Alphabet = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
+
 func EncodeBase58(u UUID) string {
-	s := base58.Encode(u[:])
-	if len(s) != 22 {
-		s = strings.Repeat("1", 22-len(s)) + s // pad with leading "zeroes" (1 in BTC base58)
+	// A 128-bit UUID is at most 22 Base58 digits. Convert directly into a fixed
+	// stack buffer and left-pad with BTC Base58 zeroes ('1'), avoiding the
+	// intermediate string allocation from base58.Encode plus concatenation.
+	var digits [22]byte // little-endian Base58 digits
+	length := 0
+	for _, b := range u {
+		carry := uint32(b)
+		for i := 0; i < length; i++ {
+			carry += uint32(digits[i]) << 8
+			digits[i] = byte(carry % 58)
+			carry /= 58
+		}
+		for carry > 0 {
+			digits[length] = byte(carry % 58)
+			length++
+			carry /= 58
+		}
 	}
-	return s[0:9] + "_" + s[9:]
+
+	var raw [22]byte
+	for i := range raw {
+		raw[i] = '1'
+	}
+	for i := 0; i < length; i++ {
+		raw[len(raw)-1-i] = base58Alphabet[digits[i]]
+	}
+
+	var out [23]byte
+	copy(out[:9], raw[:9])
+	out[9] = '_'
+	copy(out[10:], raw[9:])
+	return string(out[:])
 }
 
 func DecodeBase58(s string) (UUID, error) {
