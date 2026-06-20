@@ -91,26 +91,27 @@ func parseUUID() {
 	buf = append(buf, "\nVariant:           "...)
 	buf = strconv.AppendUint(buf, variant, 10)
 	buf = append(buf, " (binary: "...)
-	buf = appendFixedBase(buf, variant, 2, "01")
+	buf = appendBitsFixed(buf, variant, 2)
 	buf = append(buf, ")\nSub-ms precision:  "...)
 	buf = strconv.AppendUint(buf, subMsPrecision, 10)
 	buf = append(buf, " (binary: "...)
-	buf = appendFixedBase(buf, subMsPrecision, 12, "01")
+	buf = appendBitsFixed(buf, subMsPrecision, 12)
 	buf = append(buf, ")\nRandom bits (62):  0x"...)
-	buf = appendFixedBase(buf, randomBits, 15, "0123456789ABCDEF")
+	buf = appendHexFixed(buf, randomBits, 15)
 	buf = append(buf, '\n')
 	_, _ = os.Stdout.Write(buf)
 }
 
-func appendFixedBase(buf []byte, v uint64, width int, alphabet string) []byte {
-	start := len(buf)
-	for i := 0; i < width; i++ {
-		buf = append(buf, 0)
+func appendBitsFixed(buf []byte, v uint64, width int) []byte {
+	for shift := width - 1; shift >= 0; shift-- {
+		buf = append(buf, '0'+byte((v>>uint(shift))&1))
 	}
-	base := uint64(len(alphabet))
-	for i := width - 1; i >= 0; i-- {
-		buf[start+i] = alphabet[v%base]
-		v /= base
+	return buf
+}
+
+func appendHexFixed(buf []byte, v uint64, width int) []byte {
+	for shift := (width - 1) * 4; shift >= 0; shift -= 4 {
+		buf = append(buf, "0123456789ABCDEF"[(v>>uint(shift))&0xF])
 	}
 	return buf
 }
