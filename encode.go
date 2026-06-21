@@ -19,6 +19,14 @@ func encodeBase58Raw(u UUID) string {
 
 const base58Alphabet = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
 
+var base58Pairs = func() [3364]uint16 {
+	var pairs [3364]uint16
+	for i := range pairs {
+		pairs[i] = uint16(base58Alphabet[i/58])<<8 | uint16(base58Alphabet[i%58])
+	}
+	return pairs
+}()
+
 func EncodeBase58(u UUID) string {
 	// A 128-bit UUID is at most 22 Base58 digits. Divide four uint32 limbs by 58
 	// directly, then left-pad with BTC Base58 zeroes ('1') to hqid7's fixed width.
@@ -44,13 +52,13 @@ func EncodeBase58(u UUID) string {
 		cur = (rem << 32) | uint64(l3)
 		l3 = uint32(cur / 11316496)
 		rem = cur - uint64(l3)*11316496
-		raw[i] = base58Alphabet[rem%58]
-		rem /= 58
-		raw[i-1] = base58Alphabet[rem%58]
+		loPair := base58Pairs[rem%3364]
+		raw[i-1] = byte(loPair >> 8)
+		raw[i] = byte(loPair)
 		if i >= 3 {
-			rem /= 58
-			raw[i-2] = base58Alphabet[rem%58]
-			raw[i-3] = base58Alphabet[rem/58]
+			hiPair := base58Pairs[rem/3364]
+			raw[i-3] = byte(hiPair >> 8)
+			raw[i-2] = byte(hiPair)
 		}
 	}
 
