@@ -36,10 +36,7 @@ func EncodeBase58(u UUID) string {
 	l3 := binary.BigEndian.Uint32(u[12:16])
 
 	var raw [22]byte
-	for i := range raw {
-		raw[i] = '1'
-	}
-	for i := len(raw) - 1; (l0 | l1 | l2 | l3) != 0; i -= 4 {
+	for i := len(raw) - 1; i > 0; i -= 4 {
 		cur := uint64(l0)
 		l0 = uint32(cur / 11316496)
 		rem := cur - uint64(l0)*11316496
