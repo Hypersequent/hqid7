@@ -19,31 +19,31 @@ func encodeBase58Raw(u UUID) string {
 const base58Alphabet = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
 
 func EncodeBase58(u UUID) string {
-	// A 128-bit UUID is at most 22 Base58 digits. Convert directly into a fixed
-	// stack buffer and left-pad with BTC Base58 zeroes ('1'), avoiding the
-	// intermediate string allocation from base58.Encode plus concatenation.
-	var digits [22]byte // little-endian Base58 digits
-	length := 0
-	for _, b := range u {
-		carry := uint32(b)
-		for i := 0; i < length; i++ {
-			carry += uint32(digits[i]) << 8
-			digits[i] = byte(carry % 58)
-			carry /= 58
-		}
-		for carry > 0 {
-			digits[length] = byte(carry % 58)
-			length++
-			carry /= 58
-		}
-	}
+	// A 128-bit UUID is at most 22 Base58 digits. Divide four uint32 limbs by 58
+	// directly, then left-pad with BTC Base58 zeroes ('1') to hqid7's fixed width.
+	l0 := binary.BigEndian.Uint32(u[0:4])
+	l1 := binary.BigEndian.Uint32(u[4:8])
+	l2 := binary.BigEndian.Uint32(u[8:12])
+	l3 := binary.BigEndian.Uint32(u[12:16])
 
 	var raw [22]byte
 	for i := range raw {
 		raw[i] = '1'
 	}
-	for i := 0; i < length; i++ {
-		raw[len(raw)-1-i] = base58Alphabet[digits[i]]
+	for i := len(raw) - 1; (l0 | l1 | l2 | l3) != 0; i-- {
+		cur := uint64(l0)
+		l0 = uint32(cur / 58)
+		rem := cur - uint64(l0)*58
+		cur = (rem << 32) | uint64(l1)
+		l1 = uint32(cur / 58)
+		rem = cur - uint64(l1)*58
+		cur = (rem << 32) | uint64(l2)
+		l2 = uint32(cur / 58)
+		rem = cur - uint64(l2)*58
+		cur = (rem << 32) | uint64(l3)
+		l3 = uint32(cur / 58)
+		rem = cur - uint64(l3)*58
+		raw[i] = base58Alphabet[rem]
 	}
 
 	var out [23]byte
