@@ -91,13 +91,13 @@ func parseUUID() {
 	buf = append(buf, "\nVariant:           "...)
 	buf = strconv.AppendUint(buf, variant, 10)
 	buf = append(buf, " (binary: "...)
-	buf = appendBitsFixed(buf, variant, 2)
+	buf = appendBits2(buf, variant)
 	buf = append(buf, ")\nSub-ms precision:  "...)
 	buf = strconv.AppendUint(buf, subMsPrecision, 10)
 	buf = append(buf, " (binary: "...)
-	buf = appendBitsFixed(buf, subMsPrecision, 12)
+	buf = appendBits12(buf, subMsPrecision)
 	buf = append(buf, ")\nRandom bits (62):  0x"...)
-	buf = appendHexFixed(buf, randomBits, 15)
+	buf = appendHex15(buf, randomBits)
 	buf = append(buf, '\n')
 	_, _ = os.Stdout.Write(buf)
 }
@@ -159,18 +159,26 @@ func appendZoneOffset(buf []byte, offset int) []byte {
 	return buf
 }
 
-func appendBitsFixed(buf []byte, v uint64, width int) []byte {
-	for shift := width - 1; shift >= 0; shift-- {
-		buf = append(buf, '0'+byte((v>>uint(shift))&1))
-	}
-	return buf
+func appendBits2(buf []byte, v uint64) []byte {
+	return append(buf, '0'+byte((v>>1)&1), '0'+byte(v&1))
 }
 
-func appendHexFixed(buf []byte, v uint64, width int) []byte {
-	for shift := (width - 1) * 4; shift >= 0; shift -= 4 {
-		buf = append(buf, "0123456789ABCDEF"[(v>>uint(shift))&0xF])
-	}
-	return buf
+func appendBits12(buf []byte, v uint64) []byte {
+	return append(buf,
+		'0'+byte((v>>11)&1), '0'+byte((v>>10)&1), '0'+byte((v>>9)&1), '0'+byte((v>>8)&1),
+		'0'+byte((v>>7)&1), '0'+byte((v>>6)&1), '0'+byte((v>>5)&1), '0'+byte((v>>4)&1),
+		'0'+byte((v>>3)&1), '0'+byte((v>>2)&1), '0'+byte((v>>1)&1), '0'+byte(v&1),
+	)
+}
+
+func appendHex15(buf []byte, v uint64) []byte {
+	const hex = "0123456789ABCDEF"
+	return append(buf,
+		hex[(v>>56)&0xF], hex[(v>>52)&0xF], hex[(v>>48)&0xF], hex[(v>>44)&0xF],
+		hex[(v>>40)&0xF], hex[(v>>36)&0xF], hex[(v>>32)&0xF], hex[(v>>28)&0xF],
+		hex[(v>>24)&0xF], hex[(v>>20)&0xF], hex[(v>>16)&0xF], hex[(v>>12)&0xF],
+		hex[(v>>8)&0xF], hex[(v>>4)&0xF], hex[v&0xF],
+	)
 }
 
 const timeFormat = "2006-01-02 15:04:05.000 MST"
