@@ -39,28 +39,26 @@ func EncodeBase58(u UUID) string {
 	for i := range raw {
 		raw[i] = '1'
 	}
-	for i := len(raw) - 1; (l0 | l1 | l2 | l3) != 0; i -= 5 {
+	for i := len(raw) - 1; (l0 | l1 | l2 | l3) != 0; i -= 4 {
 		cur := uint64(l0)
-		l0 = uint32(cur / 656356768)
-		rem := cur - uint64(l0)*656356768
+		l0 = uint32(cur / 11316496)
+		rem := cur - uint64(l0)*11316496
 		cur = (rem << 32) | uint64(l1)
-		l1 = uint32(cur / 656356768)
-		rem = cur - uint64(l1)*656356768
+		l1 = uint32(cur / 11316496)
+		rem = cur - uint64(l1)*11316496
 		cur = (rem << 32) | uint64(l2)
-		l2 = uint32(cur / 656356768)
-		rem = cur - uint64(l2)*656356768
+		l2 = uint32(cur / 11316496)
+		rem = cur - uint64(l2)*11316496
 		cur = (rem << 32) | uint64(l3)
-		l3 = uint32(cur / 656356768)
-		rem = cur - uint64(l3)*656356768
+		l3 = uint32(cur / 11316496)
+		rem = cur - uint64(l3)*11316496
 		loPair := base58Pairs[rem%3364]
 		raw[i-1] = byte(loPair >> 8)
 		raw[i] = byte(loPair)
-		if i >= 4 {
-			rem /= 3364
-			midPair := base58Pairs[rem%3364]
-			raw[i-3] = byte(midPair >> 8)
-			raw[i-2] = byte(midPair)
-			raw[i-4] = base58Alphabet[rem/3364]
+		if i >= 3 {
+			hiPair := base58Pairs[rem/3364]
+			raw[i-3] = byte(hiPair >> 8)
+			raw[i-2] = byte(hiPair)
 		}
 	}
 
