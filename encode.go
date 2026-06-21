@@ -28,34 +28,15 @@ var base58Pairs = func() [3364]uint16 {
 }()
 
 func EncodeBase58(u UUID) string {
-	// A 128-bit UUID is at most 22 Base58 digits. Divide four uint32 limbs by 58
-	// directly, then left-pad with BTC Base58 zeroes ('1') to hqid7's fixed width.
+	// A 128-bit UUID is always formatted as 22 Base58 digits. Divide four uint32
+	// limbs by 58^4 chunks and write the fixed output positions directly.
 	l0 := binary.BigEndian.Uint32(u[0:4])
 	l1 := binary.BigEndian.Uint32(u[4:8])
 	l2 := binary.BigEndian.Uint32(u[8:12])
 	l3 := binary.BigEndian.Uint32(u[12:16])
+	var out [23]byte
+	out[9] = '_'
 
-	var raw [22]byte
-	for i := len(raw) - 1; i >= 5; i -= 4 {
-		cur := uint64(l0)
-		l0 = uint32(cur / 11316496)
-		rem := cur - uint64(l0)*11316496
-		cur = (rem << 32) | uint64(l1)
-		l1 = uint32(cur / 11316496)
-		rem = cur - uint64(l1)*11316496
-		cur = (rem << 32) | uint64(l2)
-		l2 = uint32(cur / 11316496)
-		rem = cur - uint64(l2)*11316496
-		cur = (rem << 32) | uint64(l3)
-		l3 = uint32(cur / 11316496)
-		rem = cur - uint64(l3)*11316496
-		loPair := base58Pairs[rem%3364]
-		raw[i-1] = byte(loPair >> 8)
-		raw[i] = byte(loPair)
-		hiPair := base58Pairs[rem/3364]
-		raw[i-3] = byte(hiPair >> 8)
-		raw[i-2] = byte(hiPair)
-	}
 	cur := uint64(l0)
 	l0 = uint32(cur / 11316496)
 	rem := cur - uint64(l0)*11316496
@@ -69,13 +50,104 @@ func EncodeBase58(u UUID) string {
 	l3 = uint32(cur / 11316496)
 	rem = cur - uint64(l3)*11316496
 	loPair := base58Pairs[rem%3364]
-	raw[0] = byte(loPair >> 8)
-	raw[1] = byte(loPair)
+	out[21] = byte(loPair >> 8)
+	out[22] = byte(loPair)
+	hiPair := base58Pairs[rem/3364]
+	out[19] = byte(hiPair >> 8)
+	out[20] = byte(hiPair)
 
-	var out [23]byte
-	copy(out[:9], raw[:9])
-	out[9] = '_'
-	copy(out[10:], raw[9:])
+	cur = uint64(l0)
+	l0 = uint32(cur / 11316496)
+	rem = cur - uint64(l0)*11316496
+	cur = (rem << 32) | uint64(l1)
+	l1 = uint32(cur / 11316496)
+	rem = cur - uint64(l1)*11316496
+	cur = (rem << 32) | uint64(l2)
+	l2 = uint32(cur / 11316496)
+	rem = cur - uint64(l2)*11316496
+	cur = (rem << 32) | uint64(l3)
+	l3 = uint32(cur / 11316496)
+	rem = cur - uint64(l3)*11316496
+	loPair = base58Pairs[rem%3364]
+	out[17] = byte(loPair >> 8)
+	out[18] = byte(loPair)
+	hiPair = base58Pairs[rem/3364]
+	out[15] = byte(hiPair >> 8)
+	out[16] = byte(hiPair)
+
+	cur = uint64(l0)
+	l0 = uint32(cur / 11316496)
+	rem = cur - uint64(l0)*11316496
+	cur = (rem << 32) | uint64(l1)
+	l1 = uint32(cur / 11316496)
+	rem = cur - uint64(l1)*11316496
+	cur = (rem << 32) | uint64(l2)
+	l2 = uint32(cur / 11316496)
+	rem = cur - uint64(l2)*11316496
+	cur = (rem << 32) | uint64(l3)
+	l3 = uint32(cur / 11316496)
+	rem = cur - uint64(l3)*11316496
+	loPair = base58Pairs[rem%3364]
+	out[13] = byte(loPair >> 8)
+	out[14] = byte(loPair)
+	hiPair = base58Pairs[rem/3364]
+	out[11] = byte(hiPair >> 8)
+	out[12] = byte(hiPair)
+
+	cur = uint64(l0)
+	l0 = uint32(cur / 11316496)
+	rem = cur - uint64(l0)*11316496
+	cur = (rem << 32) | uint64(l1)
+	l1 = uint32(cur / 11316496)
+	rem = cur - uint64(l1)*11316496
+	cur = (rem << 32) | uint64(l2)
+	l2 = uint32(cur / 11316496)
+	rem = cur - uint64(l2)*11316496
+	cur = (rem << 32) | uint64(l3)
+	l3 = uint32(cur / 11316496)
+	rem = cur - uint64(l3)*11316496
+	loPair = base58Pairs[rem%3364]
+	out[8] = byte(loPair >> 8)
+	out[10] = byte(loPair)
+	hiPair = base58Pairs[rem/3364]
+	out[6] = byte(hiPair >> 8)
+	out[7] = byte(hiPair)
+
+	cur = uint64(l0)
+	l0 = uint32(cur / 11316496)
+	rem = cur - uint64(l0)*11316496
+	cur = (rem << 32) | uint64(l1)
+	l1 = uint32(cur / 11316496)
+	rem = cur - uint64(l1)*11316496
+	cur = (rem << 32) | uint64(l2)
+	l2 = uint32(cur / 11316496)
+	rem = cur - uint64(l2)*11316496
+	cur = (rem << 32) | uint64(l3)
+	l3 = uint32(cur / 11316496)
+	rem = cur - uint64(l3)*11316496
+	loPair = base58Pairs[rem%3364]
+	out[4] = byte(loPair >> 8)
+	out[5] = byte(loPair)
+	hiPair = base58Pairs[rem/3364]
+	out[2] = byte(hiPair >> 8)
+	out[3] = byte(hiPair)
+
+	cur = uint64(l0)
+	l0 = uint32(cur / 11316496)
+	rem = cur - uint64(l0)*11316496
+	cur = (rem << 32) | uint64(l1)
+	l1 = uint32(cur / 11316496)
+	rem = cur - uint64(l1)*11316496
+	cur = (rem << 32) | uint64(l2)
+	l2 = uint32(cur / 11316496)
+	rem = cur - uint64(l2)*11316496
+	cur = (rem << 32) | uint64(l3)
+	l3 = uint32(cur / 11316496)
+	rem = cur - uint64(l3)*11316496
+	loPair = base58Pairs[rem%3364]
+	out[0] = byte(loPair >> 8)
+	out[1] = byte(loPair)
+
 	return string(out[:])
 }
 
