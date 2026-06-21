@@ -53,7 +53,7 @@ func EncodeBase58(u UUID) string {
 	return string(out[:])
 }
 
-var base58Decode = [128]byte{
+var base58Decode = [256]byte{
 	'1': 1, '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9,
 	'A': 10, 'B': 11, 'C': 12, 'D': 13, 'E': 14, 'F': 15, 'G': 16, 'H': 17,
 	'J': 18, 'K': 19, 'L': 20, 'M': 21, 'N': 22, 'P': 23, 'Q': 24, 'R': 25,
@@ -77,11 +77,11 @@ func DecodeBase58(s string) (UUID, error) {
 	var out [6]uint32
 	for i := 0; i < 9; i++ {
 		c := s[i]
-		if c > 127 {
-			return UUID{}, fmt.Errorf("High-bit set on invalid digit")
-		}
 		v := base58Decode[c]
 		if v == 0 {
+			if c > 127 {
+				return UUID{}, fmt.Errorf("High-bit set on invalid digit")
+			}
 			return UUID{}, fmt.Errorf("Invalid base58 digit (%q)", rune(c))
 		}
 
@@ -113,11 +113,11 @@ func DecodeBase58(s string) (UUID, error) {
 	}
 	for i := 10; i < 23; i++ {
 		c := s[i]
-		if c > 127 {
-			return UUID{}, fmt.Errorf("High-bit set on invalid digit")
-		}
 		v := base58Decode[c]
 		if v == 0 {
+			if c > 127 {
+				return UUID{}, fmt.Errorf("High-bit set on invalid digit")
+			}
 			return UUID{}, fmt.Errorf("Invalid base58 digit (%q)", rune(c))
 		}
 
