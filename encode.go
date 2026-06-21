@@ -169,62 +169,111 @@ func DecodeBase58(s string) (UUID, error) {
 		return UUID{}, errors.New("hqid7 base58: invalid separator")
 	}
 
-	// Decode the fixed 22 Base58 digits two at a time into two uint64 limbs.
-	// hqid7 keeps the low 128 bits after removing leading Base58 zeroes, so
-	// arithmetic wraps above the UUID width to match the original decoder.
-	var hi, lo uint64
-	for i := 0; i < 8; i += 2 {
-		v0 := base58Decode[s[i]]
-		if v0 == 0 {
-			c := s[i]
-			if c > 127 {
-				return UUID{}, fmt.Errorf("High-bit set on invalid digit")
-			}
-			return UUID{}, fmt.Errorf("Invalid base58 digit (%q)", rune(c))
-		}
-		v1 := base58Decode[s[i+1]]
-		if v1 == 0 {
-			c := s[i+1]
-			if c > 127 {
-				return UUID{}, fmt.Errorf("High-bit set on invalid digit")
-			}
-			return UUID{}, fmt.Errorf("Invalid base58 digit (%q)", rune(c))
-		}
-		pair := uint64(v0-1)*58 + uint64(v1-1)
-		loCarry, loProd := bits.Mul64(lo, 3364)
-		lo = loProd + pair
-		if lo < loProd {
-			loCarry++
-		}
-		hi = hi*3364 + loCarry
-	}
-
-	v0 := base58Decode[s[8]]
+	// Decode the fixed 22 Base58 digits as one leading 2-digit chunk followed by
+	// five 4-digit chunks. hqid7 keeps the low 128 bits after removing leading
+	// Base58 zeroes, so arithmetic wraps above the UUID width to match the
+	// original decoder.
+	v0 := base58Decode[s[0]]
 	if v0 == 0 {
+		c := s[0]
+		if c > 127 {
+			return UUID{}, fmt.Errorf("High-bit set on invalid digit")
+		}
+		return UUID{}, fmt.Errorf("Invalid base58 digit (%q)", rune(c))
+	}
+	v1 := base58Decode[s[1]]
+	if v1 == 0 {
+		c := s[1]
+		if c > 127 {
+			return UUID{}, fmt.Errorf("High-bit set on invalid digit")
+		}
+		return UUID{}, fmt.Errorf("Invalid base58 digit (%q)", rune(c))
+	}
+	var hi uint64
+	lo := uint64(v0-1)*58 + uint64(v1-1)
+
+	v0 = base58Decode[s[2]]
+	if v0 == 0 {
+		c := s[2]
+		if c > 127 {
+			return UUID{}, fmt.Errorf("High-bit set on invalid digit")
+		}
+		return UUID{}, fmt.Errorf("Invalid base58 digit (%q)", rune(c))
+	}
+	v1 = base58Decode[s[3]]
+	if v1 == 0 {
+		c := s[3]
+		if c > 127 {
+			return UUID{}, fmt.Errorf("High-bit set on invalid digit")
+		}
+		return UUID{}, fmt.Errorf("Invalid base58 digit (%q)", rune(c))
+	}
+	v2 := base58Decode[s[4]]
+	if v2 == 0 {
+		c := s[4]
+		if c > 127 {
+			return UUID{}, fmt.Errorf("High-bit set on invalid digit")
+		}
+		return UUID{}, fmt.Errorf("Invalid base58 digit (%q)", rune(c))
+	}
+	v3 := base58Decode[s[5]]
+	if v3 == 0 {
+		c := s[5]
+		if c > 127 {
+			return UUID{}, fmt.Errorf("High-bit set on invalid digit")
+		}
+		return UUID{}, fmt.Errorf("Invalid base58 digit (%q)", rune(c))
+	}
+	chunk := (((uint64(v0-1)*58)+uint64(v1-1))*58+uint64(v2-1))*58 + uint64(v3-1)
+	loCarry, loProd := bits.Mul64(lo, 11316496)
+	lo = loProd + chunk
+	if lo < loProd {
+		loCarry++
+	}
+	hi = hi*11316496 + loCarry
+
+	v0 = base58Decode[s[6]]
+	if v0 == 0 {
+		c := s[6]
+		if c > 127 {
+			return UUID{}, fmt.Errorf("High-bit set on invalid digit")
+		}
+		return UUID{}, fmt.Errorf("Invalid base58 digit (%q)", rune(c))
+	}
+	v1 = base58Decode[s[7]]
+	if v1 == 0 {
+		c := s[7]
+		if c > 127 {
+			return UUID{}, fmt.Errorf("High-bit set on invalid digit")
+		}
+		return UUID{}, fmt.Errorf("Invalid base58 digit (%q)", rune(c))
+	}
+	v2 = base58Decode[s[8]]
+	if v2 == 0 {
 		c := s[8]
 		if c > 127 {
 			return UUID{}, fmt.Errorf("High-bit set on invalid digit")
 		}
 		return UUID{}, fmt.Errorf("Invalid base58 digit (%q)", rune(c))
 	}
-	v1 := base58Decode[s[10]]
-	if v1 == 0 {
+	v3 = base58Decode[s[10]]
+	if v3 == 0 {
 		c := s[10]
 		if c > 127 {
 			return UUID{}, fmt.Errorf("High-bit set on invalid digit")
 		}
 		return UUID{}, fmt.Errorf("Invalid base58 digit (%q)", rune(c))
 	}
-	pair := uint64(v0-1)*58 + uint64(v1-1)
-	loCarry, loProd := bits.Mul64(lo, 3364)
-	lo = loProd + pair
+	chunk = (((uint64(v0-1)*58)+uint64(v1-1))*58+uint64(v2-1))*58 + uint64(v3-1)
+	loCarry, loProd = bits.Mul64(lo, 11316496)
+	lo = loProd + chunk
 	if lo < loProd {
 		loCarry++
 	}
-	hi = hi*3364 + loCarry
+	hi = hi*11316496 + loCarry
 
-	for i := 11; i < 23; i += 2 {
-		v0 := base58Decode[s[i]]
+	for i := 11; i < 23; i += 4 {
+		v0 = base58Decode[s[i]]
 		if v0 == 0 {
 			c := s[i]
 			if c > 127 {
@@ -232,7 +281,7 @@ func DecodeBase58(s string) (UUID, error) {
 			}
 			return UUID{}, fmt.Errorf("Invalid base58 digit (%q)", rune(c))
 		}
-		v1 := base58Decode[s[i+1]]
+		v1 = base58Decode[s[i+1]]
 		if v1 == 0 {
 			c := s[i+1]
 			if c > 127 {
@@ -240,13 +289,29 @@ func DecodeBase58(s string) (UUID, error) {
 			}
 			return UUID{}, fmt.Errorf("Invalid base58 digit (%q)", rune(c))
 		}
-		pair := uint64(v0-1)*58 + uint64(v1-1)
-		loCarry, loProd := bits.Mul64(lo, 3364)
-		lo = loProd + pair
+		v2 = base58Decode[s[i+2]]
+		if v2 == 0 {
+			c := s[i+2]
+			if c > 127 {
+				return UUID{}, fmt.Errorf("High-bit set on invalid digit")
+			}
+			return UUID{}, fmt.Errorf("Invalid base58 digit (%q)", rune(c))
+		}
+		v3 = base58Decode[s[i+3]]
+		if v3 == 0 {
+			c := s[i+3]
+			if c > 127 {
+				return UUID{}, fmt.Errorf("High-bit set on invalid digit")
+			}
+			return UUID{}, fmt.Errorf("Invalid base58 digit (%q)", rune(c))
+		}
+		chunk = (((uint64(v0-1)*58)+uint64(v1-1))*58+uint64(v2-1))*58 + uint64(v3-1)
+		loCarry, loProd = bits.Mul64(lo, 11316496)
+		lo = loProd + chunk
 		if lo < loProd {
 			loCarry++
 		}
-		hi = hi*3364 + loCarry
+		hi = hi*11316496 + loCarry
 	}
 
 	var uuid UUID
