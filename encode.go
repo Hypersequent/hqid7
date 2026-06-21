@@ -162,6 +162,21 @@ var base58Decode = func() [256]byte {
 	return decode
 }()
 
+var base58DecodePairs = func() [65536]uint16 {
+	var pairs [65536]uint16
+	for c0, v0 := range base58Decode {
+		if v0 == 0xff {
+			continue
+		}
+		for c1, v1 := range base58Decode {
+			if v1 != 0xff {
+				pairs[c0<<8|c1] = uint16(v0)*58 + uint16(v1) + 1
+			}
+		}
+	}
+	return pairs
+}()
+
 func DecodeBase58(s string) (UUID, error) {
 	if len(s) != 23 {
 		return UUID{}, errors.New("hqid7 base58: invalid length")
@@ -174,25 +189,22 @@ func DecodeBase58(s string) (UUID, error) {
 	// five 4-digit chunks. hqid7 keeps the low 128 bits after removing leading
 	// Base58 zeroes, so arithmetic wraps above the UUID width to match the
 	// original decoder.
-	v0 := base58Decode[s[0]]
-	v1 := base58Decode[s[1]]
-	if v0|v1 == 0xff {
-		if v0 == 0xff {
-			return UUID{}, invalidBase58Digit(s[0])
-		}
-		return UUID{}, invalidBase58Digit(s[1])
+	p0 := base58DecodePairs[uint16(s[0])<<8|uint16(s[1])]
+	if p0 == 0 {
+		return UUID{}, invalidBase58Pair(s[0], s[1])
 	}
 	var hi uint64
-	lo := uint64(v0)*58 + uint64(v1)
+	lo := uint64(p0 - 1)
 
-	v0 = base58Decode[s[2]]
-	v1 = base58Decode[s[3]]
-	v2 := base58Decode[s[4]]
-	v3 := base58Decode[s[5]]
-	if v0|v1|v2|v3 == 0xff {
-		return UUID{}, invalidBase58Quad(s[2], s[3], s[4], s[5])
+	p0 = base58DecodePairs[uint16(s[2])<<8|uint16(s[3])]
+	if p0 == 0 {
+		return UUID{}, invalidBase58Pair(s[2], s[3])
 	}
-	chunk := (((uint64(v0)*58)+uint64(v1))*58+uint64(v2))*58 + uint64(v3)
+	p1 := base58DecodePairs[uint16(s[4])<<8|uint16(s[5])]
+	if p1 == 0 {
+		return UUID{}, invalidBase58Pair(s[4], s[5])
+	}
+	chunk := uint64(p0-1)*3364 + uint64(p1-1)
 	loCarry, loProd := bits.Mul64(lo, 11316496)
 	lo = loProd + chunk
 	if lo < loProd {
@@ -200,14 +212,15 @@ func DecodeBase58(s string) (UUID, error) {
 	}
 	hi = hi*11316496 + loCarry
 
-	v0 = base58Decode[s[6]]
-	v1 = base58Decode[s[7]]
-	v2 = base58Decode[s[8]]
-	v3 = base58Decode[s[10]]
-	if v0|v1|v2|v3 == 0xff {
-		return UUID{}, invalidBase58Quad(s[6], s[7], s[8], s[10])
+	p0 = base58DecodePairs[uint16(s[6])<<8|uint16(s[7])]
+	if p0 == 0 {
+		return UUID{}, invalidBase58Pair(s[6], s[7])
 	}
-	chunk = (((uint64(v0)*58)+uint64(v1))*58+uint64(v2))*58 + uint64(v3)
+	p1 = base58DecodePairs[uint16(s[8])<<8|uint16(s[10])]
+	if p1 == 0 {
+		return UUID{}, invalidBase58Pair(s[8], s[10])
+	}
+	chunk = uint64(p0-1)*3364 + uint64(p1-1)
 	loCarry, loProd = bits.Mul64(lo, 11316496)
 	lo = loProd + chunk
 	if lo < loProd {
@@ -215,14 +228,15 @@ func DecodeBase58(s string) (UUID, error) {
 	}
 	hi = hi*11316496 + loCarry
 
-	v0 = base58Decode[s[11]]
-	v1 = base58Decode[s[12]]
-	v2 = base58Decode[s[13]]
-	v3 = base58Decode[s[14]]
-	if v0|v1|v2|v3 == 0xff {
-		return UUID{}, invalidBase58Quad(s[11], s[12], s[13], s[14])
+	p0 = base58DecodePairs[uint16(s[11])<<8|uint16(s[12])]
+	if p0 == 0 {
+		return UUID{}, invalidBase58Pair(s[11], s[12])
 	}
-	chunk = (((uint64(v0)*58)+uint64(v1))*58+uint64(v2))*58 + uint64(v3)
+	p1 = base58DecodePairs[uint16(s[13])<<8|uint16(s[14])]
+	if p1 == 0 {
+		return UUID{}, invalidBase58Pair(s[13], s[14])
+	}
+	chunk = uint64(p0-1)*3364 + uint64(p1-1)
 	loCarry, loProd = bits.Mul64(lo, 11316496)
 	lo = loProd + chunk
 	if lo < loProd {
@@ -230,14 +244,15 @@ func DecodeBase58(s string) (UUID, error) {
 	}
 	hi = hi*11316496 + loCarry
 
-	v0 = base58Decode[s[15]]
-	v1 = base58Decode[s[16]]
-	v2 = base58Decode[s[17]]
-	v3 = base58Decode[s[18]]
-	if v0|v1|v2|v3 == 0xff {
-		return UUID{}, invalidBase58Quad(s[15], s[16], s[17], s[18])
+	p0 = base58DecodePairs[uint16(s[15])<<8|uint16(s[16])]
+	if p0 == 0 {
+		return UUID{}, invalidBase58Pair(s[15], s[16])
 	}
-	chunk = (((uint64(v0)*58)+uint64(v1))*58+uint64(v2))*58 + uint64(v3)
+	p1 = base58DecodePairs[uint16(s[17])<<8|uint16(s[18])]
+	if p1 == 0 {
+		return UUID{}, invalidBase58Pair(s[17], s[18])
+	}
+	chunk = uint64(p0-1)*3364 + uint64(p1-1)
 	loCarry, loProd = bits.Mul64(lo, 11316496)
 	lo = loProd + chunk
 	if lo < loProd {
@@ -245,14 +260,15 @@ func DecodeBase58(s string) (UUID, error) {
 	}
 	hi = hi*11316496 + loCarry
 
-	v0 = base58Decode[s[19]]
-	v1 = base58Decode[s[20]]
-	v2 = base58Decode[s[21]]
-	v3 = base58Decode[s[22]]
-	if v0|v1|v2|v3 == 0xff {
-		return UUID{}, invalidBase58Quad(s[19], s[20], s[21], s[22])
+	p0 = base58DecodePairs[uint16(s[19])<<8|uint16(s[20])]
+	if p0 == 0 {
+		return UUID{}, invalidBase58Pair(s[19], s[20])
 	}
-	chunk = (((uint64(v0)*58)+uint64(v1))*58+uint64(v2))*58 + uint64(v3)
+	p1 = base58DecodePairs[uint16(s[21])<<8|uint16(s[22])]
+	if p1 == 0 {
+		return UUID{}, invalidBase58Pair(s[21], s[22])
+	}
+	chunk = uint64(p0-1)*3364 + uint64(p1-1)
 	loCarry, loProd = bits.Mul64(lo, 11316496)
 	lo = loProd + chunk
 	if lo < loProd {
@@ -264,6 +280,13 @@ func DecodeBase58(s string) (UUID, error) {
 	binary.BigEndian.PutUint64(uuid[0:8], hi)
 	binary.BigEndian.PutUint64(uuid[8:16], lo)
 	return uuid, nil
+}
+
+func invalidBase58Pair(c0, c1 byte) error {
+	if base58Decode[c0] == 0xff {
+		return invalidBase58Digit(c0)
+	}
+	return invalidBase58Digit(c1)
 }
 
 func invalidBase58Quad(c0, c1, c2, c3 byte) error {
