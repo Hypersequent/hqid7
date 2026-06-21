@@ -31,21 +31,25 @@ func EncodeBase58(u UUID) string {
 	for i := range raw {
 		raw[i] = '1'
 	}
-	for i := len(raw) - 1; (l0 | l1 | l2 | l3) != 0; i -= 2 {
+	for i := len(raw) - 1; (l0 | l1 | l2 | l3) != 0; i -= 3 {
 		cur := uint64(l0)
-		l0 = uint32(cur / 3364)
-		rem := cur - uint64(l0)*3364
+		l0 = uint32(cur / 195112)
+		rem := cur - uint64(l0)*195112
 		cur = (rem << 32) | uint64(l1)
-		l1 = uint32(cur / 3364)
-		rem = cur - uint64(l1)*3364
+		l1 = uint32(cur / 195112)
+		rem = cur - uint64(l1)*195112
 		cur = (rem << 32) | uint64(l2)
-		l2 = uint32(cur / 3364)
-		rem = cur - uint64(l2)*3364
+		l2 = uint32(cur / 195112)
+		rem = cur - uint64(l2)*195112
 		cur = (rem << 32) | uint64(l3)
-		l3 = uint32(cur / 3364)
-		rem = cur - uint64(l3)*3364
+		l3 = uint32(cur / 195112)
+		rem = cur - uint64(l3)*195112
 		raw[i] = base58Alphabet[rem%58]
-		raw[i-1] = base58Alphabet[rem/58]
+		if i >= 2 {
+			rem /= 58
+			raw[i-1] = base58Alphabet[rem%58]
+			raw[i-2] = base58Alphabet[rem/58]
+		}
 	}
 
 	var out [23]byte
