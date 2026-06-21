@@ -81,9 +81,9 @@ func parseUUID() {
 	buf = append(buf, "hqid7: "...)
 	buf = append(buf, idString...)
 	buf = append(buf, "\n\nTimestamp (UTC):   "...)
-	buf = timestamp.UTC().AppendFormat(buf, timeFormat)
+	buf = appendToolTime(buf, timestamp.UTC())
 	buf = append(buf, "\nTimestamp (Local): "...)
-	buf = timestamp.Local().AppendFormat(buf, timeFormat)
+	buf = appendToolTime(buf, timestamp.Local())
 	buf = append(buf, "\nUnix milliseconds: "...)
 	buf = strconv.AppendUint(buf, timestampMs, 10)
 	buf = append(buf, "\n\nVersion:           "...)
@@ -100,6 +100,63 @@ func parseUUID() {
 	buf = appendHexFixed(buf, randomBits, 15)
 	buf = append(buf, '\n')
 	_, _ = os.Stdout.Write(buf)
+}
+
+func appendToolTime(buf []byte, t time.Time) []byte {
+	year, month, day := t.Date()
+	if year < 0 || year > 9999 {
+		return t.AppendFormat(buf, timeFormat)
+	}
+	hour, minute, second := t.Clock()
+	zoneName, zoneOffset := t.Zone()
+
+	buf = append4Digits(buf, year)
+	buf = append(buf, '-')
+	buf = append2Digits(buf, int(month))
+	buf = append(buf, '-')
+	buf = append2Digits(buf, day)
+	buf = append(buf, ' ')
+	buf = append2Digits(buf, hour)
+	buf = append(buf, ':')
+	buf = append2Digits(buf, minute)
+	buf = append(buf, ':')
+	buf = append2Digits(buf, second)
+	buf = append(buf, '.')
+	buf = append3Digits(buf, t.Nanosecond()/int(time.Millisecond))
+	buf = append(buf, ' ')
+	if zoneName == "" {
+		buf = appendZoneOffset(buf, zoneOffset)
+	} else {
+		buf = append(buf, zoneName...)
+	}
+	return buf
+}
+
+func append2Digits(buf []byte, v int) []byte {
+	return append(buf, byte('0'+v/10), byte('0'+v%10))
+}
+
+func append3Digits(buf []byte, v int) []byte {
+	return append(buf, byte('0'+v/100), byte('0'+(v/10)%10), byte('0'+v%10))
+}
+
+func append4Digits(buf []byte, v int) []byte {
+	return append(buf, byte('0'+v/1000), byte('0'+(v/100)%10), byte('0'+(v/10)%10), byte('0'+v%10))
+}
+
+func appendZoneOffset(buf []byte, offset int) []byte {
+	if offset < 0 {
+		buf = append(buf, '-')
+		offset = -offset
+	} else {
+		buf = append(buf, '+')
+	}
+	offset /= 60
+	hours := offset / 60
+	minutes := offset % 60
+	buf = append2Digits(buf, hours)
+	buf = append2Digits(buf, minutes)
+	return buf
 }
 
 func appendBitsFixed(buf []byte, v uint64, width int) []byte {
