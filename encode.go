@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"math/bits"
 
 	"github.com/mr-tron/base58"
 )
@@ -71,10 +72,10 @@ func DecodeBase58(s string) (UUID, error) {
 		return UUID{}, errors.New("hqid7 base58: invalid separator")
 	}
 
-	// Decode the fixed 22 Base58 digits into four uint32 limbs. hqid7 keeps the
-	// low 128 bits after removing leading Base58 zeroes, so any carry above the
-	// UUID width is intentionally discarded to match the original decoder.
-	var out [4]uint32
+	// Decode the fixed 22 Base58 digits into two uint64 limbs. hqid7 keeps the
+	// low 128 bits after removing leading Base58 zeroes, so arithmetic wraps
+	// above the UUID width to match the original decoder.
+	var hi, lo uint64
 	for i := 0; i < 9; i++ {
 		c := s[i]
 		v := base58Decode[c]
@@ -85,18 +86,12 @@ func DecodeBase58(s string) (UUID, error) {
 			return UUID{}, fmt.Errorf("Invalid base58 digit (%q)", rune(c))
 		}
 
-		carry := uint32(v - 1)
-		t := uint64(out[3])*58 + uint64(carry)
-		out[3] = uint32(t)
-		carry = uint32(t >> 32)
-		t = uint64(out[2])*58 + uint64(carry)
-		out[2] = uint32(t)
-		carry = uint32(t >> 32)
-		t = uint64(out[1])*58 + uint64(carry)
-		out[1] = uint32(t)
-		carry = uint32(t >> 32)
-		t = uint64(out[0])*58 + uint64(carry)
-		out[0] = uint32(t)
+		loCarry, loProd := bits.Mul64(lo, 58)
+		lo = loProd + uint64(v-1)
+		if lo < loProd {
+			loCarry++
+		}
+		hi = hi*58 + loCarry
 	}
 	for i := 10; i < 23; i++ {
 		c := s[i]
@@ -108,24 +103,16 @@ func DecodeBase58(s string) (UUID, error) {
 			return UUID{}, fmt.Errorf("Invalid base58 digit (%q)", rune(c))
 		}
 
-		carry := uint32(v - 1)
-		t := uint64(out[3])*58 + uint64(carry)
-		out[3] = uint32(t)
-		carry = uint32(t >> 32)
-		t = uint64(out[2])*58 + uint64(carry)
-		out[2] = uint32(t)
-		carry = uint32(t >> 32)
-		t = uint64(out[1])*58 + uint64(carry)
-		out[1] = uint32(t)
-		carry = uint32(t >> 32)
-		t = uint64(out[0])*58 + uint64(carry)
-		out[0] = uint32(t)
+		loCarry, loProd := bits.Mul64(lo, 58)
+		lo = loProd + uint64(v-1)
+		if lo < loProd {
+			loCarry++
+		}
+		hi = hi*58 + loCarry
 	}
 
 	var uuid UUID
-	binary.BigEndian.PutUint32(uuid[0:4], out[0])
-	binary.BigEndian.PutUint32(uuid[4:8], out[1])
-	binary.BigEndian.PutUint32(uuid[8:12], out[2])
-	binary.BigEndian.PutUint32(uuid[12:16], out[3])
+	binary.BigEndian.PutUint64(uuid[0:8], hi)
+	binary.BigEndian.PutUint64(uuid[8:16], lo)
 	return uuid, nil
 }
