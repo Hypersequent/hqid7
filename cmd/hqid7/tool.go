@@ -76,7 +76,7 @@ func parseUUID() {
 	randomBits := last64Bits & 0x3FFFFFFFFFFFFFFF
 
 	// Display information
-	var storage [512]byte
+	var storage [320]byte
 	buf := storage[:0]
 	buf = append(buf, "hqid7: "...)
 	buf = append(buf, idString...)
