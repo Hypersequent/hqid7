@@ -36,7 +36,7 @@ func EncodeBase58(u UUID) string {
 	l3 := binary.BigEndian.Uint32(u[12:16])
 
 	var raw [22]byte
-	for i := len(raw) - 1; i > 0; i -= 4 {
+	for i := len(raw) - 1; i >= 5; i -= 4 {
 		cur := uint64(l0)
 		l0 = uint32(cur / 11316496)
 		rem := cur - uint64(l0)*11316496
@@ -52,12 +52,25 @@ func EncodeBase58(u UUID) string {
 		loPair := base58Pairs[rem%3364]
 		raw[i-1] = byte(loPair >> 8)
 		raw[i] = byte(loPair)
-		if i >= 3 {
-			hiPair := base58Pairs[rem/3364]
-			raw[i-3] = byte(hiPair >> 8)
-			raw[i-2] = byte(hiPair)
-		}
+		hiPair := base58Pairs[rem/3364]
+		raw[i-3] = byte(hiPair >> 8)
+		raw[i-2] = byte(hiPair)
 	}
+	cur := uint64(l0)
+	l0 = uint32(cur / 11316496)
+	rem := cur - uint64(l0)*11316496
+	cur = (rem << 32) | uint64(l1)
+	l1 = uint32(cur / 11316496)
+	rem = cur - uint64(l1)*11316496
+	cur = (rem << 32) | uint64(l2)
+	l2 = uint32(cur / 11316496)
+	rem = cur - uint64(l2)*11316496
+	cur = (rem << 32) | uint64(l3)
+	l3 = uint32(cur / 11316496)
+	rem = cur - uint64(l3)*11316496
+	loPair := base58Pairs[rem%3364]
+	raw[0] = byte(loPair >> 8)
+	raw[1] = byte(loPair)
 
 	var out [23]byte
 	copy(out[:9], raw[:9])
