@@ -162,10 +162,10 @@ var base58Decode = func() [256]byte {
 	return decode
 }()
 
-var base58DecodePairs = func() [65536]uint32 {
-	var pairs [65536]uint32
+var base58DecodePairs = func() [65536]uint16 {
+	var pairs [65536]uint16
 	for i := range pairs {
-		pairs[i] = 0xffffffff
+		pairs[i] = 0xffff
 	}
 	for c0, v0 := range base58Decode {
 		if v0 == 0xff {
@@ -173,7 +173,7 @@ var base58DecodePairs = func() [65536]uint32 {
 		}
 		for c1, v1 := range base58Decode {
 			if v1 != 0xff {
-				pairs[c0<<8|c1] = uint32(v0)*58 + uint32(v1)
+				pairs[c0<<8|c1] = uint16(v0)*58 + uint16(v1)
 			}
 		}
 	}
@@ -193,18 +193,18 @@ func DecodeBase58(s string) (UUID, error) {
 	// Base58 zeroes, so arithmetic wraps above the UUID width to match the
 	// original decoder.
 	p0 := base58DecodePairs[uint16(s[0])<<8|uint16(s[1])]
-	if p0 == 0xffffffff {
+	if p0 == 0xffff {
 		return UUID{}, invalidBase58Pair(s[0], s[1])
 	}
 	var hi uint64
 	lo := uint64(p0)
 
 	p0 = base58DecodePairs[uint16(s[2])<<8|uint16(s[3])]
-	if p0 == 0xffffffff {
+	if p0 == 0xffff {
 		return UUID{}, invalidBase58Pair(s[2], s[3])
 	}
 	p1 := base58DecodePairs[uint16(s[4])<<8|uint16(s[5])]
-	if p1 == 0xffffffff {
+	if p1 == 0xffff {
 		return UUID{}, invalidBase58Pair(s[4], s[5])
 	}
 	chunk := uint64(p0)*3364 + uint64(p1)
@@ -216,11 +216,11 @@ func DecodeBase58(s string) (UUID, error) {
 	hi = hi*11316496 + loCarry
 
 	p0 = base58DecodePairs[uint16(s[6])<<8|uint16(s[7])]
-	if p0 == 0xffffffff {
+	if p0 == 0xffff {
 		return UUID{}, invalidBase58Pair(s[6], s[7])
 	}
 	p1 = base58DecodePairs[uint16(s[8])<<8|uint16(s[10])]
-	if p1 == 0xffffffff {
+	if p1 == 0xffff {
 		return UUID{}, invalidBase58Pair(s[8], s[10])
 	}
 	chunk = uint64(p0)*3364 + uint64(p1)
@@ -232,11 +232,11 @@ func DecodeBase58(s string) (UUID, error) {
 	hi = hi*11316496 + loCarry
 
 	p0 = base58DecodePairs[uint16(s[11])<<8|uint16(s[12])]
-	if p0 == 0xffffffff {
+	if p0 == 0xffff {
 		return UUID{}, invalidBase58Pair(s[11], s[12])
 	}
 	p1 = base58DecodePairs[uint16(s[13])<<8|uint16(s[14])]
-	if p1 == 0xffffffff {
+	if p1 == 0xffff {
 		return UUID{}, invalidBase58Pair(s[13], s[14])
 	}
 	chunk = uint64(p0)*3364 + uint64(p1)
@@ -248,11 +248,11 @@ func DecodeBase58(s string) (UUID, error) {
 	hi = hi*11316496 + loCarry
 
 	p0 = base58DecodePairs[uint16(s[15])<<8|uint16(s[16])]
-	if p0 == 0xffffffff {
+	if p0 == 0xffff {
 		return UUID{}, invalidBase58Pair(s[15], s[16])
 	}
 	p1 = base58DecodePairs[uint16(s[17])<<8|uint16(s[18])]
-	if p1 == 0xffffffff {
+	if p1 == 0xffff {
 		return UUID{}, invalidBase58Pair(s[17], s[18])
 	}
 	chunk = uint64(p0)*3364 + uint64(p1)
@@ -264,11 +264,11 @@ func DecodeBase58(s string) (UUID, error) {
 	hi = hi*11316496 + loCarry
 
 	p0 = base58DecodePairs[uint16(s[19])<<8|uint16(s[20])]
-	if p0 == 0xffffffff {
+	if p0 == 0xffff {
 		return UUID{}, invalidBase58Pair(s[19], s[20])
 	}
 	p1 = base58DecodePairs[uint16(s[21])<<8|uint16(s[22])]
-	if p1 == 0xffffffff {
+	if p1 == 0xffff {
 		return UUID{}, invalidBase58Pair(s[21], s[22])
 	}
 	chunk = uint64(p0)*3364 + uint64(p1)
@@ -290,19 +290,6 @@ func invalidBase58Pair(c0, c1 byte) error {
 		return invalidBase58Digit(c0)
 	}
 	return invalidBase58Digit(c1)
-}
-
-func invalidBase58Quad(c0, c1, c2, c3 byte) error {
-	if base58Decode[c0] == 0xff {
-		return invalidBase58Digit(c0)
-	}
-	if base58Decode[c1] == 0xff {
-		return invalidBase58Digit(c1)
-	}
-	if base58Decode[c2] == 0xff {
-		return invalidBase58Digit(c2)
-	}
-	return invalidBase58Digit(c3)
 }
 
 func invalidBase58Digit(c byte) error {

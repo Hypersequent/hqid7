@@ -4,7 +4,6 @@ import (
 	"encoding/binary"
 	"fmt"
 	"os"
-	"strconv"
 	"time"
 
 	"github.com/hypersequent/hqid7"
@@ -76,112 +75,31 @@ func parseUUID() {
 	randomBits := last64Bits & 0x3FFFFFFFFFFFFFFF
 
 	// Display information
-	var storage [320]byte
-	buf := storage[:0]
-	buf = append(buf, "hqid7: "...)
-	buf = append(buf, idString...)
-	buf = append(buf, "\n\nTimestamp (UTC):   "...)
-	buf = appendToolTime(buf, timestamp.UTC())
-	buf = append(buf, "\nTimestamp (Local): "...)
-	buf = appendToolTime(buf, timestamp.Local())
-	buf = append(buf, "\nUnix milliseconds: "...)
-	buf = strconv.AppendUint(buf, timestampMs, 10)
-	buf = append(buf, "\n\nVersion:           "...)
-	buf = strconv.AppendUint(buf, version, 10)
-	buf = append(buf, "\nVariant:           "...)
-	buf = strconv.AppendUint(buf, variant, 10)
-	buf = append(buf, " (binary: "...)
-	buf = appendBits2(buf, variant)
-	buf = append(buf, ")\nSub-ms precision:  "...)
-	buf = strconv.AppendUint(buf, subMsPrecision, 10)
-	buf = append(buf, " (binary: "...)
-	buf = appendBits12(buf, subMsPrecision)
-	buf = append(buf, ")\nRandom bits (62):  0x"...)
-	buf = appendHex15(buf, randomBits)
-	buf = append(buf, '\n')
-	_, _ = os.Stdout.Write(buf)
-}
-
-func appendToolTime(buf []byte, t time.Time) []byte {
-	year, month, day := t.Date()
-	if year < 0 || year > 9999 {
-		return t.AppendFormat(buf, timeFormat)
-	}
-	hour, minute, second := t.Clock()
-	zoneName, zoneOffset := t.Zone()
-
-	buf = append4Digits(buf, year)
-	buf = append(buf, '-')
-	buf = append2Digits(buf, int(month))
-	buf = append(buf, '-')
-	buf = append2Digits(buf, day)
-	buf = append(buf, ' ')
-	buf = append2Digits(buf, hour)
-	buf = append(buf, ':')
-	buf = append2Digits(buf, minute)
-	buf = append(buf, ':')
-	buf = append2Digits(buf, second)
-	buf = append(buf, '.')
-	buf = append3Digits(buf, t.Nanosecond()/int(time.Millisecond))
-	buf = append(buf, ' ')
-	if zoneName == "" {
-		buf = appendZoneOffset(buf, zoneOffset)
-	} else {
-		buf = append(buf, zoneName...)
-	}
-	return buf
-}
-
-func append2Digits(buf []byte, v int) []byte {
-	return append(buf, byte('0'+v/10), byte('0'+v%10))
-}
-
-func append3Digits(buf []byte, v int) []byte {
-	return append(buf, byte('0'+v/100), byte('0'+(v/10)%10), byte('0'+v%10))
-}
-
-func append4Digits(buf []byte, v int) []byte {
-	return append(buf, byte('0'+v/1000), byte('0'+(v/100)%10), byte('0'+(v/10)%10), byte('0'+v%10))
-}
-
-func appendZoneOffset(buf []byte, offset int) []byte {
-	if offset < 0 {
-		buf = append(buf, '-')
-		offset = -offset
-	} else {
-		buf = append(buf, '+')
-	}
-	offset /= 60
-	hours := offset / 60
-	minutes := offset % 60
-	buf = append2Digits(buf, hours)
-	buf = append2Digits(buf, minutes)
-	return buf
-}
-
-func appendBits2(buf []byte, v uint64) []byte {
-	return append(buf, '0'+byte((v>>1)&1), '0'+byte(v&1))
-}
-
-func appendBits12(buf []byte, v uint64) []byte {
-	return append(buf,
-		'0'+byte((v>>11)&1), '0'+byte((v>>10)&1), '0'+byte((v>>9)&1), '0'+byte((v>>8)&1),
-		'0'+byte((v>>7)&1), '0'+byte((v>>6)&1), '0'+byte((v>>5)&1), '0'+byte((v>>4)&1),
-		'0'+byte((v>>3)&1), '0'+byte((v>>2)&1), '0'+byte((v>>1)&1), '0'+byte(v&1),
-	)
-}
-
-func appendHex15(buf []byte, v uint64) []byte {
-	const hex = "0123456789ABCDEF"
-	return append(buf,
-		hex[(v>>56)&0xF], hex[(v>>52)&0xF], hex[(v>>48)&0xF], hex[(v>>44)&0xF],
-		hex[(v>>40)&0xF], hex[(v>>36)&0xF], hex[(v>>32)&0xF], hex[(v>>28)&0xF],
-		hex[(v>>24)&0xF], hex[(v>>20)&0xF], hex[(v>>16)&0xF], hex[(v>>12)&0xF],
-		hex[(v>>8)&0xF], hex[(v>>4)&0xF], hex[v&0xF],
+	_, _ = fmt.Fprintf(os.Stdout, parseOutputFormat,
+		idString,
+		timestamp.UTC().Format(timeFormat),
+		timestamp.Local().Format(timeFormat),
+		timestampMs,
+		version,
+		variant, variant,
+		subMsPrecision, subMsPrecision,
+		randomBits,
 	)
 }
 
 const timeFormat = "2006-01-02 15:04:05.000 MST"
+
+const parseOutputFormat = `hqid7: %s
+
+Timestamp (UTC):   %s
+Timestamp (Local): %s
+Unix milliseconds: %d
+
+Version:           %d
+Variant:           %d (binary: %02b)
+Sub-ms precision:  %d (binary: %012b)
+Random bits (62):  0x%015X
+`
 
 const usageText = `Hypersequent hqid7 Tool
 
