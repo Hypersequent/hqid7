@@ -41,7 +41,7 @@ func generateUUID() {
 
 	// Print only canonical hqid7 base58 encoded string
 	base58String := hqid7.EncodeBase58(uuid)
-	fmt.Printf("%s\n", base58String)
+	_, _ = os.Stdout.WriteString(base58String + "\n")
 }
 
 func parseUUID() {
@@ -75,37 +75,54 @@ func parseUUID() {
 	randomBits := last64Bits & 0x3FFFFFFFFFFFFFFF
 
 	// Display information
-	fmt.Printf("hqid7: %s\n", idString)
-	fmt.Println()
-	fmt.Printf("Timestamp (UTC):   %s\n", timestamp.UTC().Format("2006-01-02 15:04:05.000 MST"))
-	fmt.Printf("Timestamp (Local): %s\n", timestamp.Local().Format("2006-01-02 15:04:05.000 MST"))
-	fmt.Printf("Unix milliseconds: %d\n", timestampMs)
-	fmt.Println()
-	fmt.Printf("Version:           %d\n", version)
-	fmt.Printf("Variant:           %d (binary: %02b)\n", variant, variant)
-	fmt.Printf("Sub-ms precision:  %d (binary: %012b)\n", subMsPrecision, subMsPrecision)
-	fmt.Printf("Random bits (62):  0x%015X\n", randomBits)
+	_, _ = fmt.Fprintf(os.Stdout, parseOutputFormat,
+		idString,
+		timestamp.UTC().Format(timeFormat),
+		timestamp.Local().Format(timeFormat),
+		timestampMs,
+		version,
+		variant, variant,
+		subMsPrecision, subMsPrecision,
+		randomBits,
+	)
 }
 
+const timeFormat = "2006-01-02 15:04:05.000 MST"
+
+const parseOutputFormat = `hqid7: %s
+
+Timestamp (UTC):   %s
+Timestamp (Local): %s
+Unix milliseconds: %d
+
+Version:           %d
+Variant:           %d (binary: %02b)
+Sub-ms precision:  %d (binary: %012b)
+Random bits (62):  0x%015X
+`
+
+const usageText = `Hypersequent hqid7 Tool
+
+Usage:
+  hqid7 <command>
+
+Commands:
+  new, generate       Generate and print a new hqid7
+  parse <hqid7>       Parse an hqid7 and show timestamp and random parts
+  help, -h, --help    Show this help message
+
+Examples:
+  hqid7 new
+  hqid7 generate
+  hqid7 parse 1C3XR6Gzv_es6ViopPLabMW
+
+Installation:
+  go install github.com/hypersequent/hqid7/cmd/hqid7@latest
+
+Development:
+  go run cmd/hqid7/tool.go <command>
+`
+
 func printUsage() {
-	fmt.Println("Hypersequent hqid7 Tool")
-	fmt.Println("")
-	fmt.Println("Usage:")
-	fmt.Println("  hqid7 <command>")
-	fmt.Println("")
-	fmt.Println("Commands:")
-	fmt.Println("  new, generate       Generate and print a new hqid7")
-	fmt.Println("  parse <hqid7>       Parse an hqid7 and show timestamp and random parts")
-	fmt.Println("  help, -h, --help    Show this help message")
-	fmt.Println("")
-	fmt.Println("Examples:")
-	fmt.Println("  hqid7 new")
-	fmt.Println("  hqid7 generate")
-	fmt.Println("  hqid7 parse 1C3XR6Gzv_es6ViopPLabMW")
-	fmt.Println("")
-	fmt.Println("Installation:")
-	fmt.Println("  go install github.com/hypersequent/hqid7/cmd/hqid7@latest")
-	fmt.Println("")
-	fmt.Println("Development:")
-	fmt.Println("  go run cmd/hqid7/tool.go <command>")
+	_, _ = os.Stdout.WriteString(usageText)
 }

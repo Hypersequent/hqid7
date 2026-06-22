@@ -2,8 +2,11 @@ package hqid7
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 	"time"
+
+	"github.com/mr-tron/base58"
 )
 
 func TestOutput(t *testing.T) {
@@ -72,6 +75,119 @@ func TestOrder(t *testing.T) {
 
 	if uuid1 >= uuid2 {
 		t.Errorf("uuid1 should be smaller than uuid2, got %s and %s", uuid1, uuid2)
+	}
+}
+
+func referenceEncodeBase58(u UUID) string {
+	s := base58.Encode(u[:])
+	if len(s) < base58EncodedDigits {
+		s = strings.Repeat("1", base58EncodedDigits-len(s)) + s
+	}
+	return s[:base58SeparatorAt] + "_" + s[base58SeparatorAt:]
+}
+
+func referenceDecodeBase58(s string) (UUID, error) {
+	decoded, err := base58.Decode(s[:base58SeparatorAt] + s[base58SeparatorAt+1:])
+	if err != nil {
+		return UUID{}, err
+	}
+	if len(decoded) > len(UUID{}) {
+		decoded = decoded[len(decoded)-len(UUID{}):]
+	}
+	var uuid UUID
+	copy(uuid[len(uuid)-len(decoded):], decoded)
+	return uuid, nil
+}
+
+func deterministicUUID(seed uint64) UUID {
+	var uuid UUID
+	for i := range uuid {
+		seed = seed*6364136223846793005 + 1442695040888963407
+		uuid[i] = byte(seed >> 56)
+	}
+	return uuid
+}
+
+func TestEncodeBase58MatchesReferenceImplementation(t *testing.T) {
+	testUUIDs := []UUID{
+		{},
+		{0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0},
+		{0, 1, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0},
+		{0, 34, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255},
+		{0, 35, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255},
+	}
+	var max UUID
+	for i := range max {
+		max[i] = 0xff
+	}
+	testUUIDs = append(testUUIDs, max)
+	for i := 0; i < 16; i++ {
+		var uuid UUID
+		uuid[i] = 1
+		testUUIDs = append(testUUIDs, uuid)
+	}
+	for seed := uint64(1); seed <= 512; seed++ {
+		testUUIDs = append(testUUIDs, deterministicUUID(seed))
+	}
+
+	for _, uuid := range testUUIDs {
+		got := EncodeBase58(uuid)
+		want := referenceEncodeBase58(uuid)
+		if got != want {
+			t.Fatalf("EncodeBase58(%v) = %q, want %q", uuid, got, want)
+		}
+		if len(got) != base58EncodedDigits+1 {
+			t.Fatalf("EncodeBase58(%v) returned length %d, want %d", uuid, len(got), base58EncodedDigits+1)
+		}
+		if got[base58SeparatorAt] != '_' {
+			t.Fatalf("EncodeBase58(%v) placed separator at byte %q, want _", uuid, got[base58SeparatorAt])
+		}
+	}
+}
+
+func TestDecodeBase58MatchesReferenceImplementation(t *testing.T) {
+	testStrings := []string{
+		"111111111_1111111111111",
+		"111111111_1111111111112",
+		"1C3XR6Gzv_es6ViopPLabMW",
+		"zzzzzzzzz_zzzzzzzzzzzzz",
+		"111111111_zzzzzzzzzzzzz",
+		"zzzzzzzzz_1111111111111",
+	}
+	for seed := uint64(1); seed <= 512; seed++ {
+		testStrings = append(testStrings, referenceEncodeBase58(deterministicUUID(seed)))
+	}
+
+	for _, s := range testStrings {
+		got, err := DecodeBase58(s)
+		if err != nil {
+			t.Fatalf("DecodeBase58(%q) returned error: %v", s, err)
+		}
+		want, err := referenceDecodeBase58(s)
+		if err != nil {
+			t.Fatalf("referenceDecodeBase58(%q) returned error: %v", s, err)
+		}
+		if got != want {
+			t.Fatalf("DecodeBase58(%q) = %v, want %v", s, got, want)
+		}
+	}
+}
+
+func TestDecodeBase58RejectsMalformedInput(t *testing.T) {
+	tests := []string{
+		"",
+		"11111111111111111111111",
+		"111111111-1111111111111",
+		"111111111_1111111111110",
+		"111111111_111111111111O",
+		"111111111_111111111111I",
+		"111111111_\xff111111111111",
+	}
+
+	for _, s := range tests {
+		if _, err := DecodeBase58(s); err == nil {
+			t.Fatalf("DecodeBase58(%q) succeeded, want error", s)
+		}
 	}
 }
 
